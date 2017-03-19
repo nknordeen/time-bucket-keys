@@ -1,4 +1,10 @@
 import org.joda.time.DateTime;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public enum TimeKeyUnit implements TimeBucketKey {
     YEARS {
         public String getKey(DateTime d) {
@@ -8,6 +14,14 @@ public enum TimeKeyUnit implements TimeBucketKey {
                 throw new IllegalArgumentException("Invalid time before epoch");
             }
             return Integer.toString(d.getYear());
+        }
+
+        public AllKeys getAllKeys(DateTime d) {
+            return new AllKeys(Collections.<String>emptySet(),
+                    Collections.<String>emptySet(),
+                    Collections.<String>emptySet(),
+                    new HashSet<String>(Collections.singletonList(getKey(d)))
+            );
         }
     },
     MONTHS {
@@ -20,6 +34,14 @@ public enum TimeKeyUnit implements TimeBucketKey {
                 return s.append(year).append(d.getMonthOfYear()).toString();
             }
         }
+
+        public AllKeys getAllKeys(DateTime d) {
+            return new AllKeys(Collections.<String>emptySet(),
+                    Collections.<String>emptySet(),
+                    new HashSet<String>(Collections.singletonList(getKey(d))),
+                    Collections.<String>emptySet()
+            );
+        }
     },
     DAYS {
         public String getKey(DateTime d) {
@@ -31,6 +53,14 @@ public enum TimeKeyUnit implements TimeBucketKey {
                 return s.append(month).append(d.getDayOfMonth()).toString();
             }
         }
+
+        public AllKeys getAllKeys(DateTime d) {
+            return new AllKeys(Collections.<String>emptySet(),
+                    new HashSet<String>(Collections.singletonList(getKey(d))),
+                    Collections.<String>emptySet(),
+                    Collections.<String>emptySet()
+            );
+        }
     },
     HOURS {
         public String getKey(DateTime d) {
@@ -41,6 +71,14 @@ public enum TimeKeyUnit implements TimeBucketKey {
             } else {
                 return s.append(day).append(d.getHourOfDay()).toString();
             }
+        }
+
+        public AllKeys getAllKeys(DateTime d) {
+            return new AllKeys(new HashSet<String>(Collections.singletonList(getKey(d))),
+                    Collections.<String>emptySet(),
+                    Collections.<String>emptySet(),
+                    Collections.<String>emptySet()
+            );
         }
     }
 }
