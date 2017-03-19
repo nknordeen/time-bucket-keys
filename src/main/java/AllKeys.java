@@ -1,33 +1,34 @@
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class AllKeys {
-    private List<String> hourKeys;
-    private List<String> dayKeys;
-    private List<String> monthKeys;
-    private List<String> yearKeys;
+    private Set<String> hourKeys;
+    private Set<String> dayKeys;
+    private Set<String> monthKeys;
+    private Set<String> yearKeys;
 
     public AllKeys() {}
 
-    public AllKeys(final List<String> hourKeys, final List<String> dayKeys, final List<String> monthKeys, final List<String> yearKeys) {
+    public AllKeys(final Set<String> hourKeys, final Set<String> dayKeys, final Set<String> monthKeys, final Set<String> yearKeys) {
         this.hourKeys = hourKeys;
         this.dayKeys = dayKeys;
         this.monthKeys = monthKeys;
         this.yearKeys = yearKeys;
     }
 
-    public List<String> getHourKeys() {
+    public Set<String> getHourKeys() {
         return this.hourKeys;
     }
 
-    public List<String> getDayKeys() {
+    public Set<String> getDayKeys() {
         return this.dayKeys;
     }
 
-    public List<String> getMonthKeys() {
+    public Set<String> getMonthKeys() {
         return this.monthKeys;
     }
 
-    public List<String> getYearKeys() {
+    public Set<String> getYearKeys() {
         return this.yearKeys;
     }
 }
