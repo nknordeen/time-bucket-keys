@@ -10,6 +10,23 @@ public class GeneratorTest {
     final String TIME_ZONE_VALID = "America/Phoenix";
     final String TIME_ZONE_INVALID = "invalidTimeZone";
 
+    @Test(expected = IllegalArgumentException.class)
+    public void nullDateTime() {
+        Generator.generateKeys(null, TimeKeyUnit.DAYS, TIME_ZONE_VALID);
+    }
+
+    @Test
+    public void nullTimezone() {
+        DateTime startTime = new DateTime(2017, 9, 5, 9, 50);
+        AllKeys result = Generator.generateKeys(startTime, TimeKeyUnit.HOURS, null);
+        String key = TimeKeyUnit.HOURS.getKey(startTime.withZone(DateTimeZone.UTC));
+        Assert.assertEquals(result.getHourKeys().size(), 1);
+        Assert.assertTrue(result.getHourKeys().contains(key));
+        Assert.assertEquals(result.getDayKeys(), Collections.<String>emptySet());
+        Assert.assertEquals(result.getMonthKeys(), Collections.<String>emptySet());
+        Assert.assertEquals(result.getYearKeys(), Collections.<String>emptySet());
+    }
+
     @Test
     public void with_validTimeAndTimeZone_shouldPass() {
         DateTime startTime = new DateTime(2017, 9, 5, 9, 50);

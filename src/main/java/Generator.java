@@ -11,12 +11,27 @@ public class Generator {
     public static AllKeys generateKeys(final DateTime startTime, final DateTime endTime, final String timeZone) {
         final DateTime startTimeUtc;
         final DateTime endTimeUtc;
-        if (endTime.isBefore(startTime)) {
-            startTimeUtc = new DateTime(endTime, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
-            endTimeUtc = new DateTime(startTime, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
+        if (startTime == null) {
+            throw new IllegalArgumentException("StartTime is required to generate the query keys");
+        }
+        if (endTime == null) {
+            throw new IllegalArgumentException("EndTime is required to generate the query keys");
+        }
+
+        final DateTimeZone defaultedTimeZone;
+        if (timeZone == null) {
+            System.out.println("TimeZone was null, defaulting to UTC");
+            defaultedTimeZone = DateTimeZone.UTC;
         } else {
-            startTimeUtc = new DateTime(startTime, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
-            endTimeUtc = new DateTime(endTime, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
+            defaultedTimeZone = DateTimeZone.forID(timeZone);
+        }
+        // No need to error out if the start and end are switched, as long as we have the range then we can switch ourselves.
+        if (endTime.isBefore(startTime)) {
+            startTimeUtc = new DateTime(endTime, defaultedTimeZone).withZone(DateTimeZone.UTC);
+            endTimeUtc = new DateTime(startTime, defaultedTimeZone).withZone(DateTimeZone.UTC);
+        } else {
+            startTimeUtc = new DateTime(startTime, defaultedTimeZone).withZone(DateTimeZone.UTC);
+            endTimeUtc = new DateTime(endTime, defaultedTimeZone).withZone(DateTimeZone.UTC);
         }
         AllKeys keys = new AllKeys();
         int totalYears = endTimeUtc.minusYears(startTimeUtc.getYear()).getYear();
@@ -111,14 +126,19 @@ public class Generator {
      * and in UTC
      * @param time - the DateTime used to generate the single key
      * @param timeUnit - Will specify the size of they time bucket
-     * @param timeZone - time zone of `time`.
+     * @param timeZone - time zone of `time`.  If null is passed in we default to UTC
      * @return - `AllKeys` the keys used to query the database
      */
     public static AllKeys generateKeys(final DateTime time, final TimeKeyUnit timeUnit, final String timeZone) {
+        if (time == null) {
+            throw new IllegalArgumentException("Time is required to generate keys for the query");
+        }
+        if (timeZone == null) {
+            System.out.println("TimeZone was null, defaulting to UTC");
+            final DateTime utcWithTimeZone = new DateTime(time, DateTimeZone.forID("UTC")).withZone(DateTimeZone.UTC);
+            return timeUnit.getAllKeys(utcWithTimeZone);
+        }
         final DateTime utcWithTimeZone = new DateTime(time, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
         return timeUnit.getAllKeys(utcWithTimeZone);
     }
-}
-interface DateTimeFactory {
-    DateTime construct(final DateTime reference, final int newTimeValue);
 }
