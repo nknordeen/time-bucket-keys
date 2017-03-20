@@ -1,15 +1,18 @@
 import org.joda.time.DateTime;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 
 public enum TimeKeyUnit implements TimeBucketKey {
     YEARS {
         public boolean isBeginning(DateTime d) {
             return d.getDayOfYear() == 1;
         }
+
+        public boolean isEnd(DateTime d) {
+            return d.dayOfYear().get() == d.dayOfYear().getMaximumValue() && MONTHS.isEnd(d);
+        }
+
         public String getKey(DateTime d) {
             // joda time allows time before 1970, but negative time seems like someone might
             // be misusing this system.
@@ -31,6 +34,11 @@ public enum TimeKeyUnit implements TimeBucketKey {
         public boolean isBeginning(DateTime d) {
             return d.getDayOfMonth() == 1;
         }
+
+        public boolean isEnd(DateTime d) {
+            return d.dayOfMonth().get() == d.dayOfMonth().getMaximumValue() && DAYS.isEnd(d);
+        }
+
         public String getKey(DateTime d) {
             String year = YEARS.getKey(d);
             StringBuilder s = new StringBuilder(6);
@@ -53,6 +61,11 @@ public enum TimeKeyUnit implements TimeBucketKey {
         public boolean isBeginning(DateTime d) {
             return d.getHourOfDay() == 0;
         }
+
+        public boolean isEnd(DateTime d) {
+            return d.getHourOfDay() == 23;
+        }
+
         public String getKey(DateTime d) {
             String month = MONTHS.getKey(d);
             StringBuilder s = new StringBuilder(8);
@@ -77,6 +90,11 @@ public enum TimeKeyUnit implements TimeBucketKey {
         public boolean isBeginning(DateTime d) {
             return true;
         }
+
+        public boolean isEnd(DateTime d) {
+            return true;
+        }
+
         public String getKey(DateTime d) {
             String day = DAYS.getKey(d);
             StringBuilder s = new StringBuilder(8);

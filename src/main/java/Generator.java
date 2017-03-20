@@ -20,13 +20,30 @@ public class Generator {
             endTimeUtc = new DateTime(endTime, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
         }
         AllKeys keys = new AllKeys();
+        int totalYears = endTimeUtc.minusYears(startTimeUtc.getYear()).getYear();
         if (startTimeUtc.equals(endTimeUtc)) {
             return TimeKeyUnit.HOURS.getAllKeys(startTimeUtc);
         }
-        if (endTimeUtc.minusYears(startTimeUtc.getYear()).getYear() >= 1) {
-            keys.addYearKey(generateYearKeys(startTimeUtc, endTimeUtc));
+        if (totalYears >= 1) {
+            keys.addYearKeys(generateYearKeys(startTimeUtc, endTimeUtc));
+        }
+        if (totalYears == 0) {
+            keys.addMonthKeys(generateMonthKeys(startTimeUtc, endTimeUtc, timeZone));
+        } else {
+            keys.addMonthKeys(generateMonthKeys(startTimeUtc,
+                    endOfYear(startTimeUtc.getYear(), timeZone), timeZone));
+            keys.addMonthKeys(generateMonthKeys(beginningOfYear(endTimeUtc.getYear(), timeZone),
+                    endTimeUtc, timeZone));
         }
         return keys;
+    }
+
+    private static DateTime beginningOfYear(final int year, final String timeZone) {
+        return new DateTime(year, 1, 1, 0, 0, DateTimeZone.UTC);
+    }
+
+    private static DateTime endOfYear(final int year, final String timeZone) {
+        return new DateTime(year, 12, 31, 23, 59, DateTimeZone.UTC);
     }
 
     private static List<String> generateYearKeys(final DateTime startTime, final DateTime endTime) {
@@ -46,6 +63,35 @@ public class Generator {
         } else {
             return Collections.emptyList();
         }
+    }
+
+    private static List<String> generateMonthKeys(final DateTime startTime, final DateTime endTime, final String timeZone) {
+        int totalMonths;
+        if (TimeKeyUnit.MONTHS.isEnd(endTime)) {
+            totalMonths = endTime.plusHours(1).minusMonths(startTime.getMonthOfYear()).getMonthOfYear();
+        } else {
+            totalMonths = endTime.minusMonths(startTime.getMonthOfYear()).getMonthOfYear();
+        }
+
+        if (totalMonths > 1 && TimeKeyUnit.MONTHS.isBeginning(startTime)) {
+            return IntStream.rangeClosed(startTime.getMonthOfYear(), endTime.getMonthOfYear())
+                    .boxed()
+                    .map(month -> TimeKeyUnit.MONTHS.getKey(monthToDate(startTime.getYear(), month, timeZone)))
+                    .collect(Collectors.toList());
+        } else if (totalMonths > 1 && !TimeKeyUnit.MONTHS.isBeginning(startTime)) {
+            return IntStream.rangeClosed(startTime.getMonthOfYear() + 1, endTime.getMonthOfYear())
+                    .boxed()
+                    .map(month -> TimeKeyUnit.MONTHS.getKey(monthToDate(startTime.getYear(), month, timeZone)))
+                    .collect(Collectors.toList());
+        } else if (totalMonths == 1 && TimeKeyUnit.MONTHS.isBeginning(startTime)) {
+            return Arrays.asList(TimeKeyUnit.MONTHS.getKey(startTime));
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    private static DateTime monthToDate(final int year, final int month, final String timeZone) {
+        return new DateTime(year, month, 1, 0, 0, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
     }
 
     /**

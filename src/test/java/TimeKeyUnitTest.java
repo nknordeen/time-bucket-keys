@@ -50,4 +50,39 @@ public class TimeKeyUnitTest {
         Assert.assertEquals("1970090509", TimeKeyUnit.HOURS.getKey(date));
     }
 
+    @Test
+    public void isEndOfYear() {
+        DateTime date = new DateTime(2016, 12, 31, 23, 0);
+        Assert.assertTrue(TimeKeyUnit.YEARS.isEnd(date));
+    }
+
+    @Test
+    public void notEndOfYear() {
+        Assert.assertTrue(TimeKeyUnit.YEARS.isEnd(new DateTime(2016, 12, 31, 23, 0)));
+        Assert.assertFalse(TimeKeyUnit.YEARS.isEnd(new DateTime(2016, 12, 30, 23, 0)));
+    }
+
+    @Test
+    public void isEndOfLeapMonth() {
+        DateTime date = new DateTime(2016, 2, 29, 23, 0);
+        Assert.assertTrue(TimeKeyUnit.MONTHS.isEnd(date));
+    }
+
+    @Test
+    public void notEndOfMonth() {
+        DateTime date = new DateTime(2016, 2, 20, 23, 0);
+        Assert.assertFalse(TimeKeyUnit.MONTHS.isEnd(date));
+    }
+
+    @Test
+    public void isEndOfDay() {
+        DateTime date = new DateTime(2016, 2, 2, 23, 0);
+        Assert.assertTrue(TimeKeyUnit.DAYS.isEnd(date));
+    }
+
+    @Test
+    public void notEndOfDay() {
+        DateTime date = new DateTime(2016, 2, 2, 2, 0);
+        Assert.assertFalse(TimeKeyUnit.DAYS.isEnd(date));
+    }
 }

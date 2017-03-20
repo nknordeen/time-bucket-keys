@@ -26,15 +26,15 @@ public class AllKeys {
         this.hourKeys.addAll(keys);
     }
 
-    public void addDayKey(final Collection<String> keys) {
+    public void addDayKeys(final Collection<String> keys) {
         this.dayKeys.addAll(keys);
     }
 
-    public void addMonthKey(final Collection<String> keys) {
+    public void addMonthKeys(final Collection<String> keys) {
         this.monthKeys.addAll(keys);
     }
 
-    public void addYearKey(final Collection<String> keys) {
+    public void addYearKeys(final Collection<String> keys) {
         this.yearKeys.addAll(keys);
     }
 
