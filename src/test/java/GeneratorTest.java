@@ -4,8 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class GeneratorTest {
 
@@ -104,6 +102,17 @@ public class GeneratorTest {
         Assert.assertEquals(result.getYearKeys(), Collections.<String>emptySet());
         Assert.assertEquals(result.getMonthKeys().size(), 3);
         Assert.assertTrue(result.getMonthKeys().contains("201611"));
+        Assert.assertTrue(result.getMonthKeys().contains("201612"));
+        Assert.assertTrue(result.getMonthKeys().contains("201701"));
+    }
+
+    @Test
+    public void withSeparateYears_andStartMonthNotAtStartOfMonth_andEndMonthAtStartOfMonth_shouldFindKeys() {
+        DateTime startTime = new DateTime(2016, 11, 2, 0, 0, DateTimeZone.UTC);
+        DateTime endTime = new DateTime(2017, 2, 5, 9, 50, DateTimeZone.UTC);
+        AllKeys result = Generator.generateKeys(startTime, endTime, TIME_ZONE_VALID);
+        Assert.assertEquals(result.getYearKeys(), Collections.<String>emptySet());
+        Assert.assertEquals(result.getMonthKeys().size(), 2);
         Assert.assertTrue(result.getMonthKeys().contains("201612"));
         Assert.assertTrue(result.getMonthKeys().contains("201701"));
     }

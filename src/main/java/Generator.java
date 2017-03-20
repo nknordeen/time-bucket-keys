@@ -1,13 +1,12 @@
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Generator {
-    
-    private Generator(){}
 
     public static AllKeys generateKeys(final DateTime startTime, final DateTime endTime, final String timeZone) {
         final DateTime startTimeUtc;
@@ -21,77 +20,90 @@ public class Generator {
         }
         AllKeys keys = new AllKeys();
         int totalYears = endTimeUtc.minusYears(startTimeUtc.getYear()).getYear();
+
+        final DateTimeFactory dateTimeMonthConstructor = (reference, month) -> new DateTime(reference.getYear(), month, 1, 0, 0, DateTimeZone.UTC);
+        final DateTimeFactory dateTimeYearConstructor = (reference, year) -> new DateTime(year, reference.getMonthOfYear(), 1, 0, 0, DateTimeZone.UTC);
+
         if (startTimeUtc.equals(endTimeUtc)) {
             return TimeKeyUnit.HOURS.getAllKeys(startTimeUtc);
         }
         if (totalYears >= 1) {
-            keys.addYearKeys(generateYearKeys(startTimeUtc, endTimeUtc));
+            int period = yearTimePeriod(startTimeUtc, endTimeUtc);
+            keys.addYearKeys(generateKeysForTimeUnit(startTimeUtc, endTimeUtc, TimeKeyUnit.YEARS, period,
+                    dateTimeYearConstructor, startTimeUtc.getYear(), endTimeUtc.getYear()));
         }
         if (totalYears == 0) {
-            keys.addMonthKeys(generateMonthKeys(startTimeUtc, endTimeUtc, timeZone));
+            int period = monthTimePeriod(startTimeUtc, endTimeUtc);
+            keys.addMonthKeys(generateKeysForTimeUnit(startTimeUtc, endTimeUtc, TimeKeyUnit.MONTHS, period,
+                    dateTimeMonthConstructor, startTimeUtc.getMonthOfYear(), endTimeUtc.getMonthOfYear()));
         } else {
-            keys.addMonthKeys(generateMonthKeys(startTimeUtc,
-                    endOfYear(startTimeUtc.getYear(), timeZone), timeZone));
-            keys.addMonthKeys(generateMonthKeys(beginningOfYear(endTimeUtc.getYear(), timeZone),
-                    endTimeUtc, timeZone));
+            final DateTime beginningOfYear = beginningOfYear(endTimeUtc.getYear());
+            final DateTime endOfYear = endOfYear(startTimeUtc.getYear());
+
+            final int startPeriod = monthTimePeriod(startTimeUtc, endOfYear);
+            keys.addMonthKeys(generateKeysForTimeUnit(startTimeUtc, endOfYear, TimeKeyUnit.MONTHS, startPeriod,
+                    dateTimeMonthConstructor, startTimeUtc.getMonthOfYear(), endOfYear.getMonthOfYear()));
+
+            final int endPeriod = monthTimePeriod(beginningOfYear, endTimeUtc);
+            keys.addMonthKeys(generateKeysForTimeUnit(beginningOfYear, endTimeUtc, TimeKeyUnit.MONTHS, endPeriod,
+                    dateTimeMonthConstructor, beginningOfYear.getMonthOfYear(), endTimeUtc.getMonthOfYear()));
         }
         return keys;
     }
 
-    private static DateTime beginningOfYear(final int year, final String timeZone) {
+    private static DateTime beginningOfYear(final int year) {
         return new DateTime(year, 1, 1, 0, 0, DateTimeZone.UTC);
     }
 
-    private static DateTime endOfYear(final int year, final String timeZone) {
+    private static DateTime endOfYear(final int year) {
         return new DateTime(year, 12, 31, 23, 59, DateTimeZone.UTC);
     }
 
-    private static List<String> generateYearKeys(final DateTime startTime, final DateTime endTime) {
-        int totalYears = endTime.minusYears(startTime.getYear()).getYear();
-        if (totalYears > 1 && TimeKeyUnit.YEARS.isBeginning(startTime)) {
-            return IntStream.range(startTime.getYear(), endTime.getYear())
-                    .boxed()
-                    .map(year -> Integer.toString(year))
-                    .collect(Collectors.toList());
-        } else if (totalYears > 1 && !TimeKeyUnit.YEARS.isBeginning(startTime)) {
-            return IntStream.range(startTime.getYear() + 1, endTime.getYear())
-                    .boxed()
-                    .map(year -> Integer.toString(year))
-                    .collect(Collectors.toList());
-        } else if (totalYears == 1 && TimeKeyUnit.YEARS.isBeginning(startTime)) {
-            return Arrays.asList(TimeKeyUnit.YEARS.getKey(startTime));
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-    private static List<String> generateMonthKeys(final DateTime startTime, final DateTime endTime, final String timeZone) {
-        int totalMonths;
+    private static int monthTimePeriod(final DateTime startTime, final DateTime endTime) {
         if (TimeKeyUnit.MONTHS.isEnd(endTime)) {
-            totalMonths = endTime.plusHours(1).minusMonths(startTime.getMonthOfYear()).getMonthOfYear();
+            return endTime.plusHours(1).minusMonths(startTime.getMonthOfYear()).getMonthOfYear();
         } else {
-            totalMonths = endTime.minusMonths(startTime.getMonthOfYear()).getMonthOfYear();
-        }
-
-        if (totalMonths > 1 && TimeKeyUnit.MONTHS.isBeginning(startTime)) {
-            return IntStream.rangeClosed(startTime.getMonthOfYear(), endTime.getMonthOfYear())
-                    .boxed()
-                    .map(month -> TimeKeyUnit.MONTHS.getKey(monthToDate(startTime.getYear(), month, timeZone)))
-                    .collect(Collectors.toList());
-        } else if (totalMonths > 1 && !TimeKeyUnit.MONTHS.isBeginning(startTime)) {
-            return IntStream.rangeClosed(startTime.getMonthOfYear() + 1, endTime.getMonthOfYear())
-                    .boxed()
-                    .map(month -> TimeKeyUnit.MONTHS.getKey(monthToDate(startTime.getYear(), month, timeZone)))
-                    .collect(Collectors.toList());
-        } else if (totalMonths == 1 && TimeKeyUnit.MONTHS.isBeginning(startTime)) {
-            return Arrays.asList(TimeKeyUnit.MONTHS.getKey(startTime));
-        } else {
-            return Collections.emptyList();
+            return endTime.minusMonths(startTime.getMonthOfYear()).getMonthOfYear();
         }
     }
 
-    private static DateTime monthToDate(final int year, final int month, final String timeZone) {
-        return new DateTime(year, month, 1, 0, 0, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
+    private static int yearTimePeriod(final DateTime startTime, final DateTime endTime) {
+        if (TimeKeyUnit.YEARS.isEnd(endTime)) {
+            return endTime.plusHours(1).minusYears(startTime.getYear()).getYear();
+        } else {
+            return endTime.minusMonths(startTime.getYear()).getYear();
+        }
+    }
+
+    private static List<String> generateKeysForTimeUnit(final DateTime startTime, final DateTime endTime,
+                                                        final TimeKeyUnit timeUnit, final int totalTimePeriod,
+                                                        final DateTimeFactory factory, final int startOfRange, final int endOfRange) {
+
+        if (totalTimePeriod > 1 && timeUnit.isBeginning(startTime) && !timeUnit.isEnd(endTime)) {
+            return IntStream.range(startOfRange, endOfRange)
+                    .boxed()
+                    .map(unit -> timeUnit.getKey(factory.construct(startTime, unit)))
+                    .collect(Collectors.toList());
+        } else if (totalTimePeriod > 1 && timeUnit.isBeginning(startTime) && timeUnit.isEnd(endTime)) {
+            return IntStream.rangeClosed(startOfRange, endOfRange)
+                    .boxed()
+                    .map(unit -> timeUnit.getKey(factory.construct(startTime, unit)))
+                    .collect(Collectors.toList());
+        } else if (totalTimePeriod > 1 && !timeUnit.isBeginning(startTime) && timeUnit.isEnd(endTime)) {
+            return IntStream.rangeClosed(startOfRange + 1, endOfRange)
+                    .boxed()
+                    .map(unit -> timeUnit.getKey(factory.construct(startTime, unit)))
+                    .collect(Collectors.toList());
+        } else if (totalTimePeriod > 1 && !timeUnit.isBeginning(startTime)) {
+            return IntStream.range(startOfRange + 1, endOfRange)
+                    .boxed()
+                    .map(unit -> timeUnit.getKey(factory.construct(startTime, unit)))
+                    .collect(Collectors.toList());
+        } else if (totalTimePeriod == 1 && timeUnit.isBeginning(startTime)) {
+            return Collections.singletonList(timeUnit.getKey(startTime));
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     /**
@@ -106,4 +118,7 @@ public class Generator {
         final DateTime utcWithTimeZone = new DateTime(time, DateTimeZone.forID(timeZone)).withZone(DateTimeZone.UTC);
         return timeUnit.getAllKeys(utcWithTimeZone);
     }
+}
+interface DateTimeFactory {
+    DateTime construct(final DateTime reference, final int newTimeValue);
 }
