@@ -7,6 +7,9 @@ import java.util.Set;
 
 public enum TimeKeyUnit implements TimeBucketKey {
     YEARS {
+        public boolean isBeginning(DateTime d) {
+            return d.getDayOfYear() == 1;
+        }
         public String getKey(DateTime d) {
             // joda time allows time before 1970, but negative time seems like someone might
             // be misusing this system.
@@ -25,6 +28,9 @@ public enum TimeKeyUnit implements TimeBucketKey {
         }
     },
     MONTHS {
+        public boolean isBeginning(DateTime d) {
+            return d.getDayOfMonth() == 1;
+        }
         public String getKey(DateTime d) {
             String year = YEARS.getKey(d);
             StringBuilder s = new StringBuilder(6);
@@ -44,6 +50,9 @@ public enum TimeKeyUnit implements TimeBucketKey {
         }
     },
     DAYS {
+        public boolean isBeginning(DateTime d) {
+            return d.getHourOfDay() == 0;
+        }
         public String getKey(DateTime d) {
             String month = MONTHS.getKey(d);
             StringBuilder s = new StringBuilder(8);
@@ -63,6 +72,11 @@ public enum TimeKeyUnit implements TimeBucketKey {
         }
     },
     HOURS {
+        // Hour is the lowest measurement, so if any extra minutes or reference to this hour
+        // we'll give it to them.
+        public boolean isBeginning(DateTime d) {
+            return true;
+        }
         public String getKey(DateTime d) {
             String day = DAYS.getKey(d);
             StringBuilder s = new StringBuilder(8);
