@@ -42,30 +42,41 @@ public class Generator {
         if (startTimeUtc.equals(endTimeUtc)) {
             return TimeKeyUnit.HOURS.getAllKeys(startTimeUtc);
         }
-        if (totalYears >= 1) {
-            int period = yearTimePeriod(startTimeUtc, endTimeUtc);
-            keys.addYearKeys(generateKeysForTimeUnit(startTimeUtc, endTimeUtc, TimeKeyUnit.YEARS, period,
-                    dateTimeYearConstructor, startTimeUtc.getYear(), endTimeUtc.getYear()));
-        }
-        if (totalYears == 0) {
-            int period = monthTimePeriod(startTimeUtc, endTimeUtc);
-            keys.addMonthKeys(generateKeysForTimeUnit(startTimeUtc, endTimeUtc, TimeKeyUnit.MONTHS, period,
-                    dateTimeMonthConstructor, startTimeUtc.getMonthOfYear(), endTimeUtc.getMonthOfYear()));
-        } else {
-            final DateTime beginningOfYear = beginningOfYear(endTimeUtc.getYear());
-            final DateTime endOfYear = endOfYear(startTimeUtc.getYear());
-
-            final int startPeriod = monthTimePeriod(startTimeUtc, endOfYear);
-            keys.addMonthKeys(generateKeysForTimeUnit(startTimeUtc, endOfYear, TimeKeyUnit.MONTHS, startPeriod,
-                    dateTimeMonthConstructor, startTimeUtc.getMonthOfYear(), endOfYear.getMonthOfYear()));
-
-            final int endPeriod = monthTimePeriod(beginningOfYear, endTimeUtc);
-            keys.addMonthKeys(generateKeysForTimeUnit(beginningOfYear, endTimeUtc, TimeKeyUnit.MONTHS, endPeriod,
-                    dateTimeMonthConstructor, beginningOfYear.getMonthOfYear(), endTimeUtc.getMonthOfYear()));
-        }
+        keys.addYearKeys(generateYearKeys(startTimeUtc, endTimeUtc));
+        keys.addMonthKeys(generateMonthKeys(startTimeUtc, endTimeUtc));
         return keys;
     }
 
+    private static List<String> generateYearKeys(final DateTime startTime, final DateTime endTime){
+        final DateTimeFactory dateTimeYearConstructor = (reference, year) ->
+                new DateTime(year, reference.getMonthOfYear(), 1, 0, 0, DateTimeZone.UTC);
+        int period = yearTimePeriod(startTime, endTime);
+        return generateKeysForTimeUnit(startTime, endTime, TimeKeyUnit.YEARS, period,
+                dateTimeYearConstructor, startTime.getYear(), endTime.getYear());
+    }
+    private static List<String> generateMonthKeys(final DateTime startTime, final DateTime endTime) {
+        final DateTimeFactory dateTimeMonthConstructor = (reference, month) ->
+                new DateTime(reference.getYear(), month, 1, 0, 0, DateTimeZone.UTC);
+        int totalYears = endTime.minusYears(startTime.getYear()).getYear();
+        if (totalYears == 0) {
+            int period = monthTimePeriod(startTime, endTime);
+            return generateKeysForTimeUnit(startTime, endTime, TimeKeyUnit.MONTHS, period,
+                    dateTimeMonthConstructor, startTime.getMonthOfYear(), endTime.getMonthOfYear());
+        } else {
+            final DateTime beginningOfYear = beginningOfYear(endTime.getYear());
+            final DateTime endOfYear = endOfYear(startTime.getYear());
+
+            final int startPeriod = monthTimePeriod(startTime, endOfYear);
+            List<String> startKeys = generateKeysForTimeUnit(startTime, endOfYear, TimeKeyUnit.MONTHS, startPeriod,
+                    dateTimeMonthConstructor, startTime.getMonthOfYear(), endOfYear.getMonthOfYear());
+
+            final int endPeriod = monthTimePeriod(beginningOfYear, endTime);
+            List<String> endKeys = generateKeysForTimeUnit(beginningOfYear, endTime, TimeKeyUnit.MONTHS, endPeriod,
+                    dateTimeMonthConstructor, beginningOfYear.getMonthOfYear(), endTime.getMonthOfYear());
+            startKeys.addAll(endKeys);
+            return startKeys;
+        }
+    }
     private static DateTime beginningOfYear(final int year) {
         return new DateTime(year, 1, 1, 0, 0, DateTimeZone.UTC);
     }
